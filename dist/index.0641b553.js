@@ -579,6 +579,174 @@ function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
 }
 
 },{}],"bNKaB":[function(require,module,exports) {
+// Importer la classe User depuis le fichier User.js
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+var _userJs = require("./User.js");
+var _userJsDefault = parcelHelpers.interopDefault(_userJs);
+// Fonction asynchrone pour récupérer des utilisateurs aléatoires depuis l'API
+const getRandomUser = async ()=>{
+    const randomUser = `https://randomuser.me/api/?results=20`;
+    const response = await fetch(randomUser);
+    const data = await response.json();
+    return data.results;
+};
+// Sélectionner le conteneur principal dans le document HTML
+const container = document.querySelector("main");
+let users; // Déclarer la variable à l'extérieur de la fonction pour qu'elle soit accessible globalement
+// Fonction asynchrone pour afficher les utilisateurs
+const displayUsers = async ()=>{
+    // Récupérer les données des utilisateurs aléatoires
+    const usersData = await getRandomUser();
+    // Créer des instances de la classe User pour chaque utilisateur
+    users = usersData.map((userData)=>{
+        // Extraire les données nécessaires de l'objet utilisateur
+        const { name, location, dob, email, picture } = userData;
+        // Créer une instance de la classe User avec les données extraites
+        return new (0, _userJsDefault.default)(name.title, name.first, name.last, location.city, location.country, dob.age, email, picture.large);
+    });
+    // Trier les utilisateurs par ordre alphabétique du nom de famille
+    users.sort((a, b)=>{
+        const lastNameA = a.nameLast.toLowerCase();
+        const lastNameB = b.nameLast.toLowerCase();
+        return lastNameA.localeCompare(lastNameB);
+    });
+    // Afficher les utilisateurs dans le conteneur principal
+    users.forEach((user)=>{
+        user.render(container);
+    });
+};
+// Sélectionner les boutons de tri dans le document HTML
+const sortByNameButton = document.getElementById("sort--name");
+const sortByAgeButton = document.getElementById("sort--age");
+// Ajouter des écouteurs d'événements pour les boutons de tri
+sortByNameButton.addEventListener("click", ()=>{
+    // Trier les utilisateurs par ordre alphabétique du nom de famille
+    users.sort((a, b)=>{
+        const lastNameA = a.nameLast.toLowerCase();
+        const lastNameB = b.nameLast.toLowerCase();
+        return lastNameA.localeCompare(lastNameB);
+    });
+    // Mettre à jour le contenu du conteneur principal
+    updateMain();
+    // Mettre en surbrillance le bouton sélectionné et désélectionner l'autre
+    toggleSelectedButton(sortByNameButton, sortByAgeButton);
+});
+sortByAgeButton.addEventListener("click", ()=>{
+    // Trier les utilisateurs par âge
+    users.sort((a, b)=>a.dobAge - b.dobAge);
+    // Mettre à jour le contenu du conteneur principal
+    updateMain();
+    // Mettre en surbrillance le bouton sélectionné et désélectionner l'autre
+    toggleSelectedButton(sortByAgeButton, sortByNameButton);
+});
+// Fonction pour mettre en surbrillance le bouton sélectionné et désélectionner l'autre
+const toggleSelectedButton = (selectedButton, otherButton)=>{
+    selectedButton.classList.add("selected");
+    otherButton.classList.remove("selected");
+};
+// Fonction pour mettre à jour le contenu du conteneur principal
+const updateMain = ()=>{
+    container.innerHTML = "";
+    // Afficher à nouveau chaque utilisateur dans le conteneur principal
+    users.forEach((user)=>{
+        user.render(container);
+    });
+};
+// Exécuter la fonction displayUsers() pour afficher les utilisateurs initiaux
+displayUsers();
+
+},{"./User.js":"3Nf0z","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"3Nf0z":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+class User {
+    // Constructeur de la classe User avec des paramètres pour initialiser les propriétés
+    constructor(nameTitle, nameFirst, nameLast, locationCity, locationCountry, dobAge, email, pictureLarge){
+        // Initialiser les propriétés de l'instance avec les valeurs fournies
+        this.nameTitle = nameTitle;
+        this.nameFirst = nameFirst;
+        this.nameLast = nameLast;
+        this.locationCity = locationCity;
+        this.locationCountry = locationCountry;
+        this.dobAge = dobAge;
+        this.email = email;
+        this.pictureLarge = pictureLarge;
+        // Appeler une méthode privée pour générer l'élément HTML représentant l'utilisateur
+        this.element = this.#generateUserElement();
+        // Ajouter un événement de clic à l'élément utilisateur
+        this.addClickEvent();
+    }
+    // Propriété privée pour suivre l'état de présence de l'utilisateur
+    isPresent = false;
+    // Méthode privée pour générer l'élément HTML représentant l'utilisateur
+    #generateUserElement() {
+        const user = document.createElement("div");
+        user.classList.add("user");
+        user.setAttribute("data-present", this.isPresent);
+        // Générer le contenu HTML de l'élément utilisateur
+        const html = `
+            <img src="${this.pictureLarge}">
+            <div class="user--info">
+                <h1>${this.nameTitle} ${this.nameFirst} ${this.nameLast}</h1>
+                <p>${this.dobAge} years old</p>
+                <p>${this.locationCity}, ${this.locationCountry}</p>
+            </div>
+            <a href="mailto:${this.email}">
+                <span class="mail">\u{2709}\u{FE0F}</span>
+            </a>
+        `;
+        // Ajouter le contenu HTML à l'élément utilisateur
+        user.innerHTML = html;
+        return user;
+    }
+    // Méthode pour ajouter un événement de clic à l'élément utilisateur
+    addClickEvent() {
+        this.element.addEventListener("click", ()=>{
+            this.togglePresence();
+        });
+    }
+    // Méthode pour inverser l'état de présence de l'utilisateur et mettre à jour l'interface
+    togglePresence() {
+        this.isPresent = !this.isPresent;
+        this.element.setAttribute("data-present", this.isPresent);
+        this.element.classList.toggle("present", this.isPresent);
+    }
+    // Méthode pour ajouter l'élément utilisateur au parent spécifié
+    render(parentElement) {
+        parentElement.appendChild(this.element);
+    }
+}
+// Exporter la classe User pour qu'elle puisse être utilisée ailleurs
+exports.default = User;
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || Object.prototype.hasOwnProperty.call(dest, key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
 
 },{}]},["3lsJq","bNKaB"], "bNKaB", "parcelRequire455d")
 
